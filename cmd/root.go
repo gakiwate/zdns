@@ -87,6 +87,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&GC.NameOverride, "override-name", "", "name overrides all passed in names")
 	rootCmd.PersistentFlags().BoolVar(&GC.AlexaFormat, "alexa", false, "is input file from Alexa Top Million download")
 	rootCmd.PersistentFlags().BoolVar(&GC.MetadataFormat, "metadata-passthrough", false, "if input records have the form 'name,METADATA', METADATA will be propagated to the output")
+	rootCmd.PersistentFlags().BoolVar(&GC.JSONFormat, "json-input", false, "ingest json input, METADATA from json will be propagated to the output")
 	rootCmd.PersistentFlags().BoolVar(&GC.IterativeResolution, "iterative", false, "Perform own iteration instead of relying on recursive resolver")
 	rootCmd.PersistentFlags().BoolVar(&GC.LookupAllNameServers, "all-nameservers", false, "Perform the lookup via all the nameservers for the domain.")
 	rootCmd.PersistentFlags().StringVar(&GC.InputFilePath, "input-file", "-", "names to read")
@@ -106,6 +107,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&GC.RecycleSockets, "recycle-sockets", true, "Create long-lived unbound UDP socket for each thread at launch and reuse for all (UDP) queries")
 	rootCmd.PersistentFlags().BoolVar(&GC.NameServerMode, "name-server-mode", false, "Treats input as nameservers to query with a static query rather than queries to send to a static name server")
 
+	rootCmd.PersistentFlags().BoolVar(&GC.IOModeNSQ, "nsq-mode", false, "Mode to use zdns as a background query engine ingesting json input streamhandlers")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQInputTopic, "nsq-input-topic", "certstream", "NSQ topic to ingest domain from")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQOutputTopic, "nsq-output-topic", "zdns", "NSQ topic to output results to")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQInputChannel, "nsq-input-channel", "new", "NSQ channel to ingest domain from")
+
 	rootCmd.PersistentFlags().StringVar(&Servers_string, "name-servers", "", "List of DNS servers to use. Can be passed as comma-delimited string or via @/path/to/file. If no port is specified, defaults to 53.")
 	rootCmd.PersistentFlags().StringVar(&Localaddr_string, "local-addr", "", "comma-delimited list of local addresses to use")
 	rootCmd.PersistentFlags().StringVar(&Localif_string, "local-interface", "", "local interface to use")
@@ -120,6 +126,9 @@ func init() {
 	rootCmd.PersistentFlags().Bool("ipv6-lookup", false, "Perform an IPv6 Lookup in modules")
 	rootCmd.PersistentFlags().String("blacklist-file", "", "blacklist file for servers to exclude from lookups")
 	rootCmd.PersistentFlags().Int("mx-cache-size", 1000, "number of records to store in MX -> A/AAAA cache")
+
+	// TODO: Upgrade Cobra to v1.5 to use newer features.
+	//rootCmd.MarkFlagRequiredTogether("nsq-mode", "nsq-input-topic")
 }
 
 // initConfig reads in config file and ENV variables if set.

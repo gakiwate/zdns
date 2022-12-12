@@ -28,6 +28,7 @@ type GlobalConf struct {
 	Retries               int
 	AlexaFormat           bool
 	MetadataFormat        bool
+	JSONFormat            bool
 	NameServerInputFormat bool
 	IterativeResolution   bool
 	LookupAllNameServers  bool
@@ -63,6 +64,11 @@ type GlobalConf struct {
 	NameOverride   string
 	NameServerMode bool
 
+	IOModeNSQ       bool
+	NSQInputTopic   string
+	NSQInputChannel string
+	NSQOutputTopic  string
+
 	Module string
 	Class  uint16
 }
@@ -84,10 +90,10 @@ type Result struct {
 	Nameserver  string        `json:"nameserver,omitempty" groups:"normal,long,trace"`
 	Class       string        `json:"class,omitempty" groups:"long,trace"`
 	AlexaRank   int           `json:"alexa_rank,omitempty" groups:"short,normal,long,trace"`
-	Metadata    string        `json:"metadata,omitempty" groups:"short,normal,long,trace"`
 	Status      string        `json:"status,omitempty" groups:"short,normal,long,trace"`
 	Error       string        `json:"error,omitempty" groups:"short,normal,long,trace"`
 	Timestamp   string        `json:"timestamp,omitempty" groups:"short,normal,long,trace"`
+	Metadata    interface{}   `json:"metadata,omitempty" groups:"short,normal,long,trace"`
 	Data        interface{}   `json:"data,omitempty" groups:"short,normal,long,trace"`
 	Trace       []interface{} `json:"trace,omitempty" groups:"trace"`
 }

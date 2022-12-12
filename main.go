@@ -22,6 +22,7 @@ import (
 	_ "github.com/zmap/zdns/pkg/miekg"
 	_ "github.com/zmap/zdns/pkg/mxlookup"
 	_ "github.com/zmap/zdns/pkg/nslookup"
+	_ "github.com/zmap/zdns/pkg/sentinel"
 	_ "github.com/zmap/zdns/pkg/spf"
 )
 

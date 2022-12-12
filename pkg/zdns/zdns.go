@@ -230,9 +230,16 @@ func Run(gc GlobalConf, flags *pflag.FlagSet,
 	if gc.NameServerMode && gc.MetadataFormat {
 		log.Fatal("Metadata mode is incompatible with name server mode")
 	}
+	if gc.JSONFormat && gc.MetadataFormat {
+		log.Fatal("JSON input mode is incompatible with metadata mode")
+	}
+	if gc.JSONFormat && gc.NameServerMode {
+		log.Fatal("JSON input mode is incompatible with name server mode")
+	}
 	if gc.NameServerMode && gc.NameOverride == "" && gc.Module != "BINDVERSION" {
 		log.Fatal("Static Name must be defined with --override-name in --name-server-mode unless DNS module does not expect names (e.g., BINDVERSION).")
 	}
+
 	// Output Groups are defined by a base + any additional fields that the user wants
 	groups := strings.Split(gc.IncludeInOutput, ",")
 	if gc.ResultVerbosity != "short" && gc.ResultVerbosity != "normal" && gc.ResultVerbosity != "long" && gc.ResultVerbosity != "trace" {
@@ -251,8 +258,13 @@ func Run(gc GlobalConf, flags *pflag.FlagSet,
 	}
 
 	// setup i/o
-	gc.InputHandler = iohandlers.NewFileInputHandler(gc.InputFilePath)
-	gc.OutputHandler = iohandlers.NewFileOutputHandler(gc.OutputFilePath)
+	if gc.IOModeNSQ {
+		gc.InputHandler = iohandlers.NewNSQStreamInputHandler(gc.NSQInputTopic, gc.NSQInputChannel)
+		gc.OutputHandler = iohandlers.NewNSQStreamOutputHandler(gc.NSQOutputTopic)
+	} else {
+		gc.InputHandler = iohandlers.NewFileInputHandler(gc.InputFilePath)
+		gc.OutputHandler = iohandlers.NewFileOutputHandler(gc.OutputFilePath)
+	}
 
 	// allow the factory to initialize itself
 	if err := factory.Initialize(&gc); err != nil {
