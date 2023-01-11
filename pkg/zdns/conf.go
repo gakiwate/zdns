@@ -65,6 +65,7 @@ type GlobalConf struct {
 	NameServerMode bool
 
 	IOModeNSQ       bool
+	NSQHost         string
 	NSQInputTopic   string
 	NSQInputChannel string
 	NSQOutputTopic  string

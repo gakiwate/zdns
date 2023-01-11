@@ -108,9 +108,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&GC.NameServerMode, "name-server-mode", false, "Treats input as nameservers to query with a static query rather than queries to send to a static name server")
 
 	rootCmd.PersistentFlags().BoolVar(&GC.IOModeNSQ, "nsq-mode", false, "Mode to use zdns as a background query engine ingesting json input streamhandlers")
-	rootCmd.PersistentFlags().StringVar(&GC.NSQInputTopic, "nsq-input-topic", "certstream", "NSQ topic to ingest domain from")
-	rootCmd.PersistentFlags().StringVar(&GC.NSQOutputTopic, "nsq-output-topic", "zdns", "NSQ topic to output results to")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQHost, "nsq-host", "localhost", "IP / Name running NSQ")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQInputTopic, "nsq-input-topic", "zdns", "NSQ topic to ingest domain from")
 	rootCmd.PersistentFlags().StringVar(&GC.NSQInputChannel, "nsq-input-channel", "new", "NSQ channel to ingest domain from")
+	rootCmd.PersistentFlags().StringVar(&GC.NSQOutputTopic, "nsq-output-topic", "zdns_results", "NSQ topic to output results to")
 
 	rootCmd.PersistentFlags().StringVar(&Servers_string, "name-servers", "", "List of DNS servers to use. Can be passed as comma-delimited string or via @/path/to/file. If no port is specified, defaults to 53.")
 	rootCmd.PersistentFlags().StringVar(&Localaddr_string, "local-addr", "", "comma-delimited list of local addresses to use")

@@ -16,6 +16,7 @@ package iohandlers
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -28,19 +29,20 @@ import (
 )
 
 type NSQStreamInputHandler struct {
+	nsqHost  string
 	consumer nsq.Consumer
 }
 
-func NewNSQStreamInputHandler(topic string, channel string) *NSQStreamInputHandler {
+func NewNSQStreamInputHandler(nsqHost string, inTopic string, inChannel string) *NSQStreamInputHandler {
 	// Instantiate a consumer that will subscribe to the provided channel.
-	config := nsq.NewConfig()
-	consumer, err := nsq.NewConsumer(topic, channel, config)
+	consumer, err := nsq.NewConsumer(inTopic, inChannel, nsq.NewConfig())
 	consumer.SetLoggerLevel(nsq.LogLevelError)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &NSQStreamInputHandler{
+		nsqHost:  nsqHost,
 		consumer: *consumer,
 	}
 }
@@ -59,7 +61,8 @@ func (h *NSQStreamInputHandler) FeedChannel(in chan<- interface{}, wg *sync.Wait
 
 	// Use nsqlookupd to discover nsqd instances.
 	// See also ConnectToNSQD, ConnectToNSQDs, ConnectToNSQLookupds.
-	err := h.consumer.ConnectToNSQLookupd("localhost:4161")
+	nsqUrl := fmt.Sprintf("%s:4161", h.nsqHost)
+	err := h.consumer.ConnectToNSQLookupd(nsqUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,13 +79,14 @@ func (h *NSQStreamInputHandler) FeedChannel(in chan<- interface{}, wg *sync.Wait
 }
 
 type NSQStreamOutputHandler struct {
-	producer  nsq.Producer
-	nsq_topic string
+	producer    nsq.Producer
+	nsqOutTopic string
 }
 
-func NewNSQStreamOutputHandler(nsq_topic string) *NSQStreamOutputHandler {
+func NewNSQStreamOutputHandler(nsqHost string, nsqOutTopic string) *NSQStreamOutputHandler {
 	// Create a new NSQ producer
-	producer, err := nsq.NewProducer("localhost:4150", nsq.NewConfig())
+	nsqUrl := fmt.Sprintf("%s:4150", nsqHost)
+	producer, err := nsq.NewProducer(nsqUrl, nsq.NewConfig())
 	producer.SetLoggerLevel(nsq.LogLevelError)
 	if err != nil {
 		// Report Error and Exit.
@@ -90,15 +94,15 @@ func NewNSQStreamOutputHandler(nsq_topic string) *NSQStreamOutputHandler {
 	}
 
 	return &NSQStreamOutputHandler{
-		producer:  *producer,
-		nsq_topic: nsq_topic,
+		producer:    *producer,
+		nsqOutTopic: nsqOutTopic,
 	}
 }
 
 func (h *NSQStreamOutputHandler) WriteResults(results <-chan string, wg *sync.WaitGroup) error {
 	defer (*wg).Done()
 	for n := range results {
-		h.producer.Publish(h.nsq_topic, []byte(n))
+		h.producer.Publish(h.nsqOutTopic, []byte(n))
 	}
 	return nil
 }

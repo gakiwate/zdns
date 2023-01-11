@@ -259,8 +259,8 @@ func Run(gc GlobalConf, flags *pflag.FlagSet,
 
 	// setup i/o
 	if gc.IOModeNSQ {
-		gc.InputHandler = iohandlers.NewNSQStreamInputHandler(gc.NSQInputTopic, gc.NSQInputChannel)
-		gc.OutputHandler = iohandlers.NewNSQStreamOutputHandler(gc.NSQOutputTopic)
+		gc.InputHandler = iohandlers.NewNSQStreamInputHandler(gc.NSQHost, gc.NSQInputTopic, gc.NSQInputChannel)
+		gc.OutputHandler = iohandlers.NewNSQStreamOutputHandler(gc.NSQHost, gc.NSQOutputTopic)
 	} else {
 		gc.InputHandler = iohandlers.NewFileInputHandler(gc.InputFilePath)
 		gc.OutputHandler = iohandlers.NewFileOutputHandler(gc.OutputFilePath)
