@@ -85,17 +85,6 @@ func parseJSONInputLine(line string) (string, map[string]string, error) {
 	return domain, metadata, nil
 }
 
-func checkScanAfterMetadata(metadata map[string]string) int64 {
-	scanAfter, _ := strconv.ParseInt(metadata["scan_after"], 0, 64)
-	if scanAfter > 0 {
-		tnow := time.Now().Unix()
-		if tnow < scanAfter {
-			return scanAfter - tnow
-		}
-	}
-	return 0
-}
-
 func parseNormalInputLine(line string) (string, string) {
 	s := strings.SplitN(line, ",", 2)
 	if len(s) == 1 {
@@ -138,7 +127,6 @@ func doLookup(g GlobalLookupFactory, gc *GlobalConf, input <-chan interface{}, o
 		var changed bool
 		var lookupName string
 		var entryMetadata map[string]string
-		var tsleep int64
 		rawName := ""
 		nameServer := ""
 		var rank int
@@ -153,7 +141,6 @@ func doLookup(g GlobalLookupFactory, gc *GlobalConf, input <-chan interface{}, o
 			rawName, res.Metadata, _ = parseJSONInputLine(line)
 		} else if gc.IOModeNSQ {
 			rawName, entryMetadata, _ = parseJSONInputLine(line)
-			tsleep = checkScanAfterMetadata(entryMetadata)
 			res.Metadata = entryMetadata
 		} else {
 			rawName, nameServer = parseNormalInputLine(line)
@@ -164,15 +151,6 @@ func doLookup(g GlobalLookupFactory, gc *GlobalConf, input <-chan interface{}, o
 		}
 		res.Name = rawName
 		res.Class = dns.Class(gc.Class).String()
-
-		// Add logic to delay scans till scan_after Assumption that in the
-		// Sentinel Mode the input will sorted by the scan_after time, so it
-		// does not hurt to wait till the time duration. This capability is to
-		// enable delayed scanning
-		if gc.Module == "SENTINEL" {
-			log.Info("Sleeping for %d seconds", tsleep)
-			time.Sleep(time.Duration(tsleep) * time.Second)
-		}
 
 		innerRes, trace, status, err = l.DoLookup(lookupName, nameServer)
 		res.Timestamp = time.Now().Format(gc.TimeFormat)
