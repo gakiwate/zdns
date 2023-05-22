@@ -16,17 +16,47 @@ package iohandlers
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/nsqio/go-nsq"
 )
+
+// parse json input
+// expects {"domain": "abc.xyz", "metadata": {"sha1": "xxxx"}}
+func parseJSONInputLine(line string) (map[string]string, error) {
+	var input map[string]interface{}
+	err := json.Unmarshal([]byte(line), &input)
+	if err != nil {
+		log.Error("Malformed Input Line")
+		return nil, err
+	}
+	metadata := map[string]string{}
+	for k, v := range input["metadata"].(map[string]interface{}) {
+		metadata[k] = v.(string)
+	}
+	return metadata, nil
+}
+
+func checkScanAfterMetadata(metadata map[string]string) int64 {
+	scanAfter, _ := strconv.ParseInt(metadata["scan_after"], 0, 64)
+	if scanAfter > 0 {
+		tnow := time.Now().Unix()
+		if tnow < scanAfter {
+			return scanAfter - tnow
+		}
+	}
+	return 0
+}
 
 type NSQStreamInputHandler struct {
 	nsqHost  string
@@ -55,6 +85,13 @@ func (h *NSQStreamInputHandler) FeedChannel(in chan<- interface{}, wg *sync.Wait
 	// See also AddConcurrentHandlers.
 	h.consumer.AddHandler(nsq.HandlerFunc(func(m *nsq.Message) error {
 		// handle the message
+		entryMetadata, _ := parseJSONInputLine(string(m.Body))
+		tsleep := checkScanAfterMetadata(entryMetadata)
+		if tsleep > 0 {
+			m.RequeueWithoutBackoff(time.Duration(tsleep) * time.Second)
+			log.Debug(m.ID, " is requeue-ing after some seconds: ", tsleep)
+			return nil
+		}
 		in <- string(m.Body)
 		return nil
 	}))
